@@ -12,7 +12,7 @@ pixi install
 Then open the notebook with the `default` environment's kernel
 (`.pixi/envs/default/bin/python`).
 
-summer4 is pinned to a commit in `pixi.toml` (currently `v0.2.0a6`). To move to a
+summer4 is pinned to a commit in `pixi.toml` (currently `v0.2.0a7`). To move to a
 newer summer4, change `rev` there and run `pixi update summer4`.
 
 Put your own code in `src/example_project` (installed in editable mode), and

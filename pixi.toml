@@ -11,8 +11,8 @@ python = "3.13.*"
 ipykernel = ">=7.2.0,<8"
 
 [pypi-dependencies]
-# summer4 v0.2.0a6
-summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "33f207e333f0dbd9baaaf488f9fd5d6e3f75f0cd", extras = ["calibration", "pandas", "frames"] }
+# summer4 v0.2.0a7
+summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "d08db9aa00187030b1e52352969968fff17cd2a6", extras = ["calibration", "pandas", "frames"] }
 example_project = { path = "src/example_project", editable = true }
 arviz = { version = ">=1.0, <2", extras = ["plotly"] }
 plotly = ">=6.6.0, <7"
