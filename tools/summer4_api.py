@@ -206,6 +206,7 @@ def _where() -> None:
             "         browse the docs and examples for this exact commit at "
             f"https://github.com/monash-emu/summer4/tree/{vcs.get('commit_id', 'main')}"
         )
+    print("docs:    https://monash-emu.github.io/summer4/ (latest main; may be ahead of this pin)")
 
 
 def main(argv: list[str]) -> int:

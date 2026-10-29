@@ -22,8 +22,8 @@ Then open the notebook with the `default` environment's kernel
 summer4: compartments, flows, infection, results and calibration, plus the common
 pitfalls and a summer2/summer3 translation table.
 
-summer4 is pinned to a commit in `pixi.toml` (currently `v0.2.0a7`). To move to a
-newer summer4, change `rev` there, run `pixi update summer4`, update the guide, and run
+summer4 is pinned to a commit in `pixi.toml` (currently `v0.3.0a1`). To move to a
+newer summer4, change `tag` there, run `pixi update summer4`, update the guide, and run
 `pixi run check`.
 
 Put your own code in `src/example_project` (installed in editable mode), and

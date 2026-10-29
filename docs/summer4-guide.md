@@ -1,6 +1,6 @@
 # summer4 guide for this project
 
-This is a working reference for **summer4 0.2.0a7**, the version pinned in `pixi.toml`.
+This is a working reference for **summer4 0.3.0a1**, the version pinned in `pixi.toml`.
 It is written for people and coding agents who have not used summer4 before and have no
 copy of its repository: only what `pixi install` puts in `.pixi/`.
 
@@ -102,6 +102,16 @@ model.add_flow(TransitionFlow("recovery", state["I"], state["R"], 1.0 / Param("r
 - Rates are expressions: numbers, `Param("name")`, `+ - * / **`, NumPy ufuncs such as
   `np.exp(Param("log_k"))` and `np.cos(...)`, and `Time()` (the current model time).
   Time-varying helpers are in `summer4.timevarying` (`linear`, `step`, `sigmoidal`).
+- `Reduce(where=selector)` is the current number of people in the matching compartments,
+  and `Reduce()` the whole population, so mass action needs no epidemiology helper:
+  `Param("beta") * Reduce(where=state["I"])` (see [section 4](#4-infection) for the usual
+  force of infection).
+
+```python
+from summer4 import Reduce
+
+mass_action = Param("beta") * Reduce(where=state["I"])  # a rate expression, per susceptible
+```
 - Names must be unique across flows, and also across forces of infection and parameters
   (see [Pitfalls](#10-pitfalls)).
 
@@ -268,11 +278,21 @@ incidence = result["infection"].sum_by()                         # infections pe
 incidence_by_age = result["infection"].sum_by(age, side="source")  # flows need side=
 
 daily_counts = incidence.integrate_intervals()        # infections in each day (count)
-cumulative = daily_counts.cumulative()                # running total of those counts
+cumulative = incidence.cumulative_integral()          # infections so far, at each save
 weekly = daily_counts.resample("W", how="sum")        # calendar weeks (needs an epoch)
-whole_year = float(np.asarray(incidence.integrate().values))  # one number
+whole_year = incidence.integrate().scalar()           # one number (a 0-d array)
 
-assert abs(float(np.asarray(cumulative.values)[-1]) - whole_year) < 1e-3 * whole_year
+assert abs(float(np.asarray(cumulative.values)[-1]) - float(whole_year)) < 1e-6 * whole_year
+```
+
+An output reduced over time (`integrate()`, `at(t)`) has no `time` dim and combines with
+a series by repeating its value at every time:
+
+```python
+share = incidence / incidence.integrate()      # share of the year's infections, per day
+change = population - population.at(0.0)       # change since day 0
+assert share.dims == ("time",)
+assert abs(float(np.asarray(share.integrate().values)) - 1.0) < 1e-9
 ```
 
 Useful `Output` methods (`pixi run api Output` lists them all):
@@ -285,7 +305,9 @@ Useful `Output` methods (`pixi run api Output` lists them all):
 | `rolling(n, how="sum")` | window of `n` **saved points** (a week only if saves are daily); the first `n - 1` values are NaN |
 | `resample("W", how="sum")` | calendar bins (needs `epoch=`) |
 | `integrate_intervals()`, `integrate()` | trapezoid integral per save interval, or over the whole run |
-| `cumulative()` | running **sum** of the saved values |
+| `cumulative_integral()` | running integral of a **rate**: cumulative people at each save |
+| `cumsum()` | running **sum** of amounts per interval (for example `integrate_intervals()` output) |
+| `array()`, `scalar()` | the values as a plain JAX array (`scalar()` requires a single value) |
 | `to_pandas()`, `values`, `times` | export; a time-only output has one column, `"value"` |
 
 Outputs on the same time axis combine with `+ - * /` and NumPy ufuncs, matching columns
@@ -372,22 +394,23 @@ assert abs(float(draws.mean()) - 0.25) < 0.05
 3. **Default solver is Euler at `dt`.** With `dt=1` it is off by a few percent for fast
    epidemics. Use `solver="tsit5"` when accuracy matters.
 4. **Flow outputs are rates, not counts.** Counts per interval: `integrate_intervals()`.
-   Totals: `integrate()`. Cumulative counts: `integrate_intervals().cumulative()`.
-   `cumulative()` on a rate is just a running sum of rates.
+   Totals: `integrate()`. Cumulative counts: `cumulative_integral()`. `cumsum()` adds up
+   saved values, so on a rate it is a count only when saves are one day apart.
+   (`cumulative()` was removed in 0.3.0a1.)
 5. **`rolling(n)` counts saved points**, not days.
 6. **Flow outputs need `side=`** to keep a property: `sum_by(age, side="source")`.
-7. **Combining outputs needs the same time axis.** In 0.2.0a7 an output reduced over time
-   (`integrate()`, `at(t)`) keeps a one-point time axis, so `series / series.integrate()`
-   raises *Output time axes differ*. Divide by a plain number instead:
-   `series / float(np.asarray(series.integrate().values))`.
+7. **Two series combine only on the same time axis** (same saves); otherwise they raise
+   *Output time axes differ*. Use `at_times(ts)` to bring one onto the other's times. An
+   output reduced over time (`integrate()`, `at(t)`) combines with any series.
 8. **`group_by` without `mixing` is not homogeneous mixing** (each group mixes only with
    itself). Omit `group_by` for homogeneous mixing.
 9. **Likelihood aggregation defaults to `"mean"`**: use `Poisson("sum")` and friends.
-10. **Precision is float32** in 0.2.0a7 (JAX's default). A compartment of 100 million then
-   moves in steps of 8 people. For large populations, put this before building the model:
-   `import jax; jax.config.update("jax_enable_x64", True)`. In tests, compare float32
-   results with a relative tolerance around `1e-4` (`np.testing.assert_allclose(...,
-   rtol=1e-4)`), not exact equality.
+10. **Precision is float64**: importing summer4 turns on JAX's 64-bit mode for the whole
+   process. To trade accuracy for speed or memory (or on a GPU without float64), set
+   `JAX_ENABLE_X64=0` before starting Python, or call
+   `jax.config.update("jax_enable_x64", False)` after `import summer4` and before
+   compiling. float32 keeps about 7 significant figures (a compartment of 100 million moves
+   in steps of 8 people); compare float32 results with `rtol=1e-4`, float64 with `1e-9`.
 11. **Values are JAX arrays, sometimes wrapped.** A time-only output's `.values` is a JAX
     array (`np.asarray(output.values)`). An output that keeps compartments or columns, and
     `compiled.initial_state(params)`, return a `PropertyData`: the array is `.data`.
@@ -400,18 +423,22 @@ assert abs(float(draws.mean()) - 0.25) < 0.05
 
 ## 11. Finding more
 
-There is no copy of summer4's docs in this project. In order of usefulness:
+This project has no copy of summer4's repository. In order of usefulness:
 
 1. `pixi run api NAME` prints the signature, docstring and methods of any public name
    (`pixi run api Output.rolling`, `pixi run api --search mixing`, `pixi run api` for the
    full list). Docstrings are the authoritative reference for the installed version.
 2. `pixi run api --source NAME` prints source; `pixi run api --where` prints the installed
    path and exact commit. The package is plain Python under `.pixi/envs/default/lib/`.
-3. With web access, summer4's repository at that exact commit has the user guide
-   (`docs/user/`), summer2-style docs (`docs/summer2/`), worked textbook chapters
-   (`docs/textbook/`) and acceptance notebooks (`examples/notebooks/`):
+3. With web access, summer4's documentation is published at
+   <https://monash-emu.github.io/summer4/>: a guide in the summer2 style (basic model,
+   flow types, rates, derived outputs, stratification, mixing, initial population,
+   calibration), worked textbook chapters, and release notes with a migration table.
+   **The site documents summer4's latest `main`**, which may be ahead of the pinned
+   version. When they disagree, `pixi run api` is right for this project.
+4. The repository at the pinned commit has the same pages as notebooks (`docs/guide/`,
+   `docs/textbook/`) plus acceptance notebooks (`examples/notebooks/`):
    `https://github.com/monash-emu/summer4/tree/<commit from pixi run api --where>`.
-   Read the docs at the pinned commit, not `main`: `main` may have APIs this version lacks.
 
 ## 12. Coming from summer2 or summer3
 
@@ -424,6 +451,6 @@ There is no copy of summer4's docs in this project. In order of usefulness:
 | `set_mixing_matrix` | `ForceOfInfection(group_by=age, mixing=MixingMatrix(age, matrix))` |
 | `set_population_split`, stratification `adjustments` | `Split(...)`; `adjust=[Multiply(...), Overwrite(...)]` on the flow |
 | `request_output_for_flow`, `request_output_for_compartments` | `FlowMass(...)`, `Compartments(...)` in an `OutputSet` |
-| `request_cumulative_output` | `.integrate_intervals().cumulative()` |
+| `request_cumulative_output` | `.cumulative_integral()` (of a flow) |
 | `Parameter("x")` / `computegraph` functions | `Param("x")`, plain arithmetic, NumPy ufuncs, `defer(f)` |
 | estival `BayesianCompartmentalModel` | `BayesianModel(compiled, fixed, priors, TargetSet(...), outputs=...)` |

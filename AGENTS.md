@@ -10,8 +10,9 @@ started from `monash-emu/summer4template`. These instructions are for any coding
 You probably do not know summer4: it is new, and it is **not** summer2 or summer3 with a
 new name. Its API is different, and guessing from those, or from summer4's own `main`
 branch, will produce code that does not run against the pinned version. This project has
-no copy of summer4's repository or docs; everything you need is here or in the installed
-package.
+no copy of summer4's repository; everything you need is here or in the installed package.
+summer4's documentation site, <https://monash-emu.github.io/summer4/>, is useful with web
+access, but it documents summer4's latest `main`, which may be ahead of the pin.
 
 1. Read [`docs/summer4-guide.md`](docs/summer4-guide.md). It covers the whole workflow
    (compartments, flows, infection, running, results, calibration) for exactly the pinned
@@ -76,7 +77,7 @@ Notebooks use the environment's kernel, `.pixi/envs/default/bin/python`.
 - **Write claims after measuring.** Captions, "what to check" text and summaries quote
   numbers from the run, written after it, not expectations written before.
 - **Do not change the summer4 pin** in `pixi.toml` unless asked. If you are asked:
-  change `rev`, run `pixi update summer4`, update the version named at the top of
+  change `tag` (or `rev`), run `pixi update summer4`, update the version named at the top of
   `docs/summer4-guide.md` and anything the new release changed (its notes are at
   https://github.com/monash-emu/summer4/releases), then `pixi run check`.
 - Clear notebook outputs (`pixi run clear-notebooks`) before committing.
