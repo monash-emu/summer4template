@@ -1,0 +1,20 @@
+[workspace]
+channels = ["conda-forge"]
+name = "summer4template"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.13.*"
+ipykernel = ">=7.2.0,<8"
+
+[pypi-dependencies]
+# summer4 v0.2.0a6
+summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "33f207e333f0dbd9baaaf488f9fd5d6e3f75f0cd", extras = ["calibration", "pandas", "frames"] }
+example_project = { path = "src/example_project", editable = true }
+arviz = { version = ">=1.0, <2", extras = ["plotly"] }
+plotly = ">=6.6.0, <7"
+ipywidgets = ">=8.1.8, <9"
+nbformat = ">=5.10.4, <6"
