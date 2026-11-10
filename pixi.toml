@@ -17,6 +17,14 @@ ipykernel = ">=7.2.0,<8"
 # summer4 v0.3.0a1 (https://github.com/monash-emu/summer4/releases/tag/v0.3.0a1)
 summer4 = { git = "https://github.com/monash-emu/summer4.git", tag = "v0.3.0a1", extras = ["calibration", "pandas", "frames"] }
 example_project = { path = "src/example_project", editable = true }
+# JAX is pinned to the 0.6 series, the version summer4 develops and tests on. summer4's
+# pyproject.toml only sets lower bounds (jax>=0.6.0), so without a pin pixi resolves the
+# newest JAX, which summer4 has not tested: JAX 0.12 breaks NUTS chain_method="parallel"
+# with diffrax solvers (through equinox 0.13.8). To move it, see "JAX version" in README.md.
+jax = ">=0.6,<0.7"
+jaxlib = ">=0.6,<0.7"
+# numpyro 0.20 and later require jax>=0.7, so bound it to match the JAX pin.
+numpyro = ">=0.16,<0.20"
 arviz = { version = ">=1.0, <2", extras = ["plotly"] }
 plotly = ">=6.6.0, <7"
 ipywidgets = ">=8.1.8, <9"

@@ -26,6 +26,17 @@ summer4 is pinned to a release tag in `pixi.toml` (currently `v0.3.0a1`). To mov
 newer summer4, change `tag` there, run `pixi update summer4`, update the guide, and run
 `pixi run check`.
 
+### JAX version
+
+JAX is pinned to the 0.6 series in `pixi.toml` (`jax` and `jaxlib` `>=0.6,<0.7`, with
+`numpyro` `>=0.16,<0.20`, the last numpyro releases that support JAX 0.6), the series
+summer4 develops and tests on. `pixi.lock` is committed, so every new project installs the
+same, tested set of packages. summer4 itself only asks for `jax>=0.6.0`, so without the pin
+pixi would pick the newest JAX, which summer4 has not been tested against (JAX 0.12, for
+example, breaks NUTS with `chain_method="parallel"` and a diffrax solver such as
+`solver="tsit5"`). To move JAX, change the `jax`, `jaxlib` (and if needed `numpyro`) pins in
+`pixi.toml`, run `pixi update jax jaxlib numpyro`, then `pixi run check`.
+
 Put your own code in `src/example_project` (installed in editable mode), and
 rename it to suit.
 
