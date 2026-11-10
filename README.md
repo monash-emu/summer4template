@@ -5,6 +5,12 @@ A small pixi template for [summer4](https://github.com/monash-emu/summer4) proje
 `notebooks/01-Example.ipynb` builds an age-stratified SIR model, runs it, makes
 synthetic weekly observations from it, and calibrates the two parameters with NUTS.
 
+To install the pixi environment exactly as specified and tested;
+```bash
+pixi install --locked
+```
+
+Or to use the latest (valid) package versions
 ```bash
 pixi install
 ```
