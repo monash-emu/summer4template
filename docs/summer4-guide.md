@@ -1,6 +1,7 @@
 # summer4 guide for this project
 
-This is a working reference for **summer4 0.3.0a1**, the version pinned in `pixi.toml`.
+This is a working reference for **summer4 0.3.0a1**, the version pinned in `pixi.toml`
+(with JAX pinned to the 0.6 series; see "JAX version" in `README.md`).
 It is written for people and coding agents who have not used summer4 before and have no
 copy of its repository: only what `pixi install` puts in `.pixi/`.
 

@@ -80,6 +80,10 @@ Notebooks use the environment's kernel, `.pixi/envs/default/bin/python`.
   change `tag` (or `rev`), run `pixi update summer4`, update the version named at the top of
   `docs/summer4-guide.md` and anything the new release changed (its notes are at
   https://github.com/monash-emu/summer4/releases), then `pixi run check`.
+- **Do not change the JAX pin** (`jax`/`jaxlib` `>=0.6,<0.7`, `numpyro` `<0.20`) unless
+  asked: it is the JAX series summer4 is tested on, and newer JAX can break calibration
+  (see "JAX version" in `README.md`). If you are asked: change the pins, run
+  `pixi update jax jaxlib numpyro`, then `pixi run check`.
 - Clear notebook outputs (`pixi run clear-notebooks`) before committing.
 
 ## Troubleshooting
