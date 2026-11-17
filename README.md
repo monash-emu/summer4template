@@ -16,7 +16,10 @@ pixi install
 ```
 
 Then open the notebook with the `default` environment's kernel
-(`.pixi/envs/default/bin/python`). Works on macOS (Apple silicon) and Linux.
+(`.pixi/envs/default/bin/python` on macOS and Linux, `.pixi\envs\default\python.exe` on
+Windows). Works on macOS (Apple silicon), Linux and Windows (x86_64, CPU only; JAX's
+Windows wheels are labelled experimental, and WSL2 is the route if you need a GPU).
+CI runs `pixi run check` on all three.
 
 | Command | What it does |
 |---|---|
@@ -28,7 +31,7 @@ Then open the notebook with the `default` environment's kernel
 summer4: compartments, flows, infection, results and calibration, plus the common
 pitfalls and a summer2/summer3 translation table.
 
-summer4 is pinned to a release tag in `pixi.toml` (currently `v0.3.0a1`). To move to a
+summer4 is pinned to a release tag in `pixi.toml` (currently `v0.3.0a5`). To move to a
 newer summer4, change `tag` there, run `pixi update summer4`, update the guide, and run
 `pixi run check`.
 

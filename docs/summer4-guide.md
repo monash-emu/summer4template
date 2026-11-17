@@ -1,6 +1,6 @@
 # summer4 guide for this project
 
-This is a working reference for **summer4 0.3.0a1**, the version pinned in `pixi.toml`
+This is a working reference for **summer4 0.3.0a5**, the version pinned in `pixi.toml`
 (with JAX pinned to the 0.6 series; see "JAX version" in `README.md`).
 It is written for people and coding agents who have not used summer4 before and have no
 copy of its repository: only what `pixi install` puts in `.pixi/`.
@@ -226,10 +226,10 @@ assert abs(float(np.asarray(initial.data).sum()) - 1e6) < 1
 ```
 
 - Every `Param` name used by the model must be in `params`.
-- `dt` is the save spacing **and** the step of the default solver, which is fixed-step
-  **Euler** (first order). With `dt=1` on a typical epidemic it puts the peak a few
-  percent and about a day off. Pass `solver="tsit5"` (adaptive) when peaks, timings or
-  totals matter, or use a smaller `dt`.
+- `dt` is the save spacing and the first step of the default solver, adaptive **Tsit5**,
+  which then picks its own steps. `solver="euler"` gives fixed-step Euler at `dt` (first
+  order, a few percent off for a fast epidemic at `dt=1`), which matches pre-0.3.0a2
+  numbers. `summer4.runtime_info()` reports the defaults in use.
 - `epoch=` makes results date-indexed and enables calendar operations (`resample`,
   `Target.from_series`). Without it, time is just numbers.
 - `save=` limits what is kept; by default everything is saved (next section).
@@ -392,8 +392,10 @@ assert abs(float(draws.mean()) - 0.25) < 0.05
 2. **One namespace for saved names.** Flows, forces of infection and parameters are all
    saved under their own names. Name the force of infection `"foi"`, not the same as the
    infection flow, or one silently replaces the other in `result`.
-3. **Default solver is Euler at `dt`.** With `dt=1` it is off by a few percent for fast
-   epidemics. Use `solver="tsit5"` when accuracy matters.
+3. **Parameters are traced JAX values.** Under the default adaptive solver, a custom
+   function that turns a parameter into a Python number (`float(params["beta"])`, an
+   `if` on a parameter) fails. Keep values as JAX arrays (`jnp.where` for branches), or
+   pass `solver="euler"`.
 4. **Flow outputs are rates, not counts.** Counts per interval: `integrate_intervals()`.
    Totals: `integrate()`. Cumulative counts: `cumulative_integral()`. `cumsum()` adds up
    saved values, so on a rate it is a count only when saves are one day apart.

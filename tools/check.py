@@ -35,7 +35,8 @@ def use_project_kernel(directory: Path) -> None:
     spec.mkdir(parents=True)
     argv = [sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}"]
     (spec / "kernel.json").write_text(
-        json.dumps({"argv": argv, "display_name": KERNEL, "language": "python"})
+        json.dumps({"argv": argv, "display_name": KERNEL, "language": "python"}),
+        encoding="utf-8",
     )
     os.environ["JUPYTER_PATH"] = os.pathsep.join(
         [str(directory), *filter(None, [os.environ.get("JUPYTER_PATH")])]

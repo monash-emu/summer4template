@@ -1,2 +1,5 @@
 # SCM syntax highlighting & preventing 3-way merges
 pixi.lock merge=binary linguist-language=YAML linguist-generated=true
+# Keep LF on every OS so notebooks and sources don't churn on Windows checkouts
+# (git's core.autocrlf would otherwise rewrite them to CRLF).
+* text=auto eol=lf
