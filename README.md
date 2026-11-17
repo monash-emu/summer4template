@@ -16,7 +16,10 @@ pixi install
 ```
 
 Then open the notebook with the `default` environment's kernel
-(`.pixi/envs/default/bin/python`). Works on macOS (Apple silicon) and Linux.
+(`.pixi/envs/default/bin/python` on macOS and Linux, `.pixi\envs\default\python.exe` on
+Windows). Works on macOS (Apple silicon), Linux and Windows (x86_64, CPU only; JAX's
+Windows wheels are labelled experimental, and WSL2 is the route if you need a GPU).
+CI runs `pixi run check` on all three.
 
 | Command | What it does |
 |---|---|
