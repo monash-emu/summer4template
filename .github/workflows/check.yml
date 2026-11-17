@@ -4,7 +4,6 @@ name: Check
 # the pixi workspace supports, so Windows is tested without a Windows machine.
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
