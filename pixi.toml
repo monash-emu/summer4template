@@ -14,8 +14,8 @@ python = "3.13.*"
 ipykernel = ">=7.2.0,<8"
 
 [pypi-dependencies]
-# summer4 v0.3.0a1 (https://github.com/monash-emu/summer4/releases/tag/v0.3.0a1)
-summer4 = { git = "https://github.com/monash-emu/summer4.git", tag = "v0.3.0a1", extras = ["calibration", "pandas", "frames"] }
+# summer4 v0.3.0a5 (https://github.com/monash-emu/summer4/releases/tag/v0.3.0a5)
+summer4 = { git = "https://github.com/monash-emu/summer4.git", tag = "v0.3.0a5", extras = ["calibration", "pandas", "frames"] }
 example_project = { path = "src/example_project", editable = true }
 # JAX is pinned to the 0.6 series, the version summer4 develops and tests on. summer4's
 # pyproject.toml only sets lower bounds (jax>=0.6.0), so without a pin pixi resolves the

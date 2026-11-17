@@ -44,8 +44,9 @@ Python, or a separate virtualenv.
 | Clear notebook outputs before committing | `pixi run clear-notebooks` |
 | Look up summer4 | `pixi run api ...` |
 
-Supported platforms: macOS on Apple silicon (`osx-arm64`) and Linux (`linux-64`).
-Notebooks use the environment's kernel, `.pixi/envs/default/bin/python`.
+Supported platforms: macOS on Apple silicon (`osx-arm64`), Linux (`linux-64`) and Windows
+(`win-64`, CPU only; JAX's Windows wheels are experimental). Notebooks use the environment's
+kernel, `.pixi/envs/default/bin/python` (on Windows, `.pixi\envs\default\python.exe`).
 
 ## Layout
 
@@ -90,7 +91,8 @@ Notebooks use the environment's kernel, `.pixi/envs/default/bin/python`.
 
 - **`ModuleNotFoundError` for `example_project` only in Jupyter**: the notebook kernel is
   not this project's environment (it can happen after moving or copying `.pixi/`). Select
-  the kernel at `.pixi/envs/default/bin/python`, or re-register it with
+  the kernel at `.pixi/envs/default/bin/python` (Windows: `.pixi\envs\default\python.exe`),
+  or re-register it with
   `pixi run python -m ipykernel install --prefix .pixi/envs/default --name python3`.
   `pixi run check` always uses this project's interpreter.
 - **A summer4 call fails with an unexpected argument**: you are probably using a newer or
