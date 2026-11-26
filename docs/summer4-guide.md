@@ -1,6 +1,6 @@
 # summer4 guide for this project
 
-This is a working reference for **summer4 0.3.0a5**, the version pinned in `pixi.toml`
+This is a working reference for **summer4 0.3.0a6**, the version pinned in `pixi.toml`
 (with JAX pinned to the 0.6 series; see "JAX version" in `README.md`).
 It is written for people and coding agents who have not used summer4 before and have no
 copy of its repository: only what `pixi install` puts in `.pixi/`.
@@ -113,8 +113,8 @@ from summer4 import Reduce
 
 mass_action = Param("beta") * Reduce(where=state["I"])  # a rate expression, per susceptible
 ```
-- Names must be unique across flows, and also across forces of infection and parameters
-  (see [Pitfalls](#10-pitfalls)).
+- Names must be unique across flows and forces of infection, which are saved under their
+  names (see [Pitfalls](#10-pitfalls)).
 
 **Stratum-specific rates** use `adjust=`: `Multiply(value, where=selector)` scales the rate
 for the matching source compartments, `Overwrite(value, where=...)` replaces it.
@@ -229,10 +229,13 @@ assert abs(float(np.asarray(initial.data).sum()) - 1e6) < 1
 - `dt` is the save spacing and the first step of the default solver, adaptive **Tsit5**,
   which then picks its own steps. `solver="euler"` gives fixed-step Euler at `dt` (first
   order, a few percent off for a fast epidemic at `dt=1`), which matches pre-0.3.0a2
-  numbers. `summer4.runtime_info()` reports the defaults in use.
+  numbers. `summer4.runtime_info()` reports the defaults in use, including the XLA:CPU
+  settings summer4 picks on import.
 - `epoch=` makes results date-indexed and enables calendar operations (`resample`,
   `Target.from_series`). Without it, time is just numbers.
-- `save=` limits what is kept; by default everything is saved (next section).
+- `save=` limits what is kept; by default the compartments, every flow and every force of
+  infection are saved (next section). `outputs=` solves for an `OutputSet` and returns its
+  named outputs ([section 8](#8-named-outputs-outputset)).
 
 **Check what each flow does** before trusting a run: `compiled.edges(name)` lists its
 edges, and the first saved flow value is the per-capita rate times the source stock.
@@ -257,11 +260,11 @@ faster = compiled.run({**params, "recovery_time": 5.0}, t0=0.0, t1=365.0, dt=1.0
 
 ## 7. Results
 
-`result.keys()` lists what a default run saved: `"compartments"`, every **flow** by name,
-every **force of infection** by name, and every **parameter** by name, in one namespace.
+`result.keys()` lists what a default run saved: `"compartments"`, every **flow** by name
+and every **force of infection** by name, in one namespace. Parameters are not saved.
 
 ```python
-assert {"compartments", "infection", "recovery", "foi", "contact_rate"} <= set(result.keys())
+assert set(result.keys()) == {"compartments", "ageing", "birth", "death", "infection", "recovery", "foi"}
 
 comps = result["compartments"]
 assert comps.dims == ("time", "compartment")
@@ -325,6 +328,7 @@ assert list(frame.columns) == ["age=0", "age=15", "age=65"]
 An `OutputSet` declares derived outputs once, saves only what they need, and is what
 calibration targets refer to. Leaves are `Compartments(...)` and `FlowMass(flow_name)`,
 with the same methods as `Output`; `outputs.ref(name)` builds on another output.
+`run(..., outputs=outputs)` solves for what the outputs need and returns them evaluated.
 
 ```python
 from summer4 import Compartments, FlowMass, OutputSet
@@ -335,10 +339,43 @@ outputs["weekly_incidence"] = outputs.ref("incidence").rolling(7, how="sum")
 outputs["prevalence"] = Compartments(where=state["I"]).sum_by()
 outputs["prevalence_by_age"] = Compartments(where=state["I"]).sum_by(age)
 
-named = outputs.evaluate(
-    compiled.run(params, save=outputs.plan(), t0=0.0, t1=365.0, dt=1.0, epoch=epoch), params
-)
+named = compiled.run(params, t0=0.0, t1=365.0, dt=1.0, epoch=epoch, outputs=outputs)
 assert named["weekly_incidence"].dims == ("time",)
+```
+
+This is the same as `outputs.evaluate(compiled.run(params, save=outputs.plan(), ...), params)`,
+the two-step form you need when you want the raw `Result` as well.
+
+**Requests** (summer2's `request_output_for_*`) are one call each and the same as the
+assignment their docstring shows, so they mix freely with the above:
+`outputs.compartments(name, where)`, `outputs.flow(name, flow, source=, dest=)`,
+`outputs.aggregate(name, [names])`, `outputs.cumulative_integral(name, source, start=)`,
+`outputs.cumsum(...)` and `outputs.function(name, f, *args)` (your own function, applied
+after the solve). `by=age` adds one output per stratum (`prevXage_0`, ...).
+**`keep=False`** marks an intermediate: other outputs can use it, but it is not returned.
+
+```python
+requests = OutputSet()
+requests.compartments("population", keep=False)
+requests.compartments("infectious", state["I"], keep=False)
+requests["prevalence"] = requests.ref("infectious") / requests.ref("population")
+requests.flow("incidence", "infection", by=age)
+requests.cumulative_integral("cumulative_infections", "incidence")
+
+by_request = compiled.run(params, t0=0.0, t1=365.0, dt=1.0, epoch=epoch, outputs=requests)
+assert "population" not in by_request.keys()
+assert {"prevalence", "incidence", "incidenceXage_0", "cumulative_infections"} <= set(by_request.keys())
+```
+
+**Any rate expression** that reads time, state or flows can be an output: assign it and it
+is saved during the solve (here the seasonal force of infection actually acting).
+
+```python
+seasonal_out = OutputSet()
+seasonal_out["force_of_infection"] = foi
+seasonal_out["contact_rate_now"] = Param("contact_rate") * seasonal
+saved = compiled.run(params, t0=0.0, t1=365.0, dt=1.0, epoch=epoch, outputs=seasonal_out)
+assert saved["contact_rate_now"].dims == ("time",)
 ```
 
 ## 9. Calibration
@@ -389,8 +426,8 @@ assert abs(float(draws.mean()) - 0.25) < 0.05
    sends people aged 15 into `R` in *every* age group, and population is still conserved,
    so nothing looks wrong. Name the property on both sides or neither, and check
    `compiled.edges(name)`.
-2. **One namespace for saved names.** Flows, forces of infection and parameters are all
-   saved under their own names. Name the force of infection `"foi"`, not the same as the
+2. **One namespace for saved names.** Flows and forces of infection are both saved under
+   their own names. Name the force of infection `"foi"`, not the same as the
    infection flow, or one silently replaces the other in `result`.
 3. **Parameters are traced JAX values.** Under the default adaptive solver, a custom
    function that turns a parameter into a Python number (`float(params["beta"])`, an
@@ -453,7 +490,8 @@ This project has no copy of summer4's repository. In order of usefulness:
 | `add_infection_frequency_flow` | `TransitionFlow(..., ForceOfInfection(...))` |
 | `set_mixing_matrix` | `ForceOfInfection(group_by=age, mixing=MixingMatrix(age, matrix))` |
 | `set_population_split`, stratification `adjustments` | `Split(...)`; `adjust=[Multiply(...), Overwrite(...)]` on the flow |
-| `request_output_for_flow`, `request_output_for_compartments` | `FlowMass(...)`, `Compartments(...)` in an `OutputSet` |
-| `request_cumulative_output` | `.cumulative_integral()` (of a flow) |
+| `request_output_for_flow`, `request_output_for_compartments` | `outputs.flow(...)`, `outputs.compartments(...)`, or `FlowMass(...)`, `Compartments(...)` in an `OutputSet` |
+| `request_cumulative_output`, `request_aggregate_output`, `request_function_output` | `outputs.cumulative_integral(...)`, `outputs.aggregate(...)`, `outputs.function(...)` |
+| `save_results=False` | `keep=False` on a request or `outputs.set(name, expr, keep=False)` |
 | `Parameter("x")` / `computegraph` functions | `Param("x")`, plain arithmetic, NumPy ufuncs, `defer(f)` |
 | estival `BayesianCompartmentalModel` | `BayesianModel(compiled, fixed, priors, TargetSet(...), outputs=...)` |
