@@ -39,6 +39,8 @@ docstring, methods) or `pixi run api --search WORD`. Check:
    the intended total.
 4. `compile()`, then `run(params, t0=..., t1=..., dt=..., epoch=...)`; check
    `result.solver.ok`.
+5. Named outputs in an `OutputSet` (requests such as `outputs.flow(...)`, or assignments);
+   `run(..., outputs=outputs)` returns them evaluated.
 
 Run each step with `pixi run python` (a scratch script is fine) rather than assuming.
 
@@ -51,7 +53,8 @@ Run each step with `pixi run python` (a scratch script is fine) rather than assu
 - Flow outputs are rates per unit time; integrate (`integrate_intervals()`,
   `integrate()`) before comparing with counts.
 - Units: model time is whatever `Epoch(unit=...)` and your rates say (days by default).
-- If accuracy matters, compare `solver="tsit5"` with the default Euler.
+- The default solver is adaptive Tsit5; `solver="euler"` is fixed-step and first order, so
+  compare against the default before trusting Euler results.
 
 ## 5. Calibration
 
